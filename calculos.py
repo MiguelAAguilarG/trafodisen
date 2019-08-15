@@ -16,6 +16,13 @@ class Calculos():
 		self.J_secundario_aluminio = self.datos_por_defecto['J_secundario_aluminio']
 		self.espesor_molde = self.datos_por_defecto['espesor_molde']
 		self.margen_baja = self.datos_por_defecto['margen_baja']
+		self.rho_Al = self.datos_por_defecto['rho_Al']
+		self.rho_Cu = self.datos_por_defecto['rho_Cu']
+		self.T_base = self.datos_por_defecto['T_base']
+		self.T_trabajo = self.datos_por_defecto['T_trabajo']
+		self.densidad_acero = self.datos_por_defecto['densidad_acero']
+		self.maximas_perdidas_nucleo = self.datos_por_defecto['maximas_perdidas_nucleo']
+		self.permeabilidad_vacio = self.datos_por_defecto['permeabilidad_vacio']
 
 		#datos_opcionales
 		self.datos_opcionales = datos_opcionales
@@ -34,10 +41,13 @@ class Calculos():
 		self.espesor_conductor_baja = self.datos['espesor_conductor_baja']
 		self.Dc = self.datos['Dc']
 		self.kVBIL = self.datos['kVBIL']
+		self.clase_aislamiento = self.datos['clase_aislamiento']
+		self.factor_carga = self.datos['factor_carga']
+		self.fp = self.datos['fp']
 
 		self.datos_salida_dict = datos_salida_dict
 
-		self.calcular()
+		self.calcular_simple()
 
 	def calculo_voltajes(self):
 		if self.sistema == 'trifasico' and self.conexion == 'estrella':
@@ -59,7 +69,6 @@ class Calculos():
 
 			self.Is_linea = self.kva*1000/(sqrt(3)*self.Vs_linea)
 			self.Is_fase = self.Is_linea
-
 		elif self.sistema == 'trifasico' and self.conexion == 'delta':
 			self.Vp_fase = self.Vp_linea
 			self.Vs_fase = self.Vs_linea
@@ -143,9 +152,9 @@ class Calculos():
 
 	def calculo_espesor_aislamiento_baja(self):
 		if self.espesor_conductor_baja <= 0.00089:
-			self.espesor_aislamiento_conductor_baja = 0.127
+			self.espesor_aislamiento_conductor_baja = 0.000127
 		elif self.espesor_conductor_baja > 0.00089:
-			self.espesor_aislamiento_conductor_baja = 0.254
+			self.espesor_aislamiento_conductor_baja = 0.000254
 		else:
 			print('ERROR!. Espesor del conductor de baja tensión fuera de rango')
 
@@ -200,16 +209,216 @@ class Calculos():
 		
 		return self.E_refuerzo
 
-	def calcular(self):
+	def calculo_espesor_aislamiento_capa_alta(self):
+		if self.kVBIL <= 125:
+			if self.V_capa < 23500:
+				self.espesor_aislamiento_capa_alta = 0.000254
+			elif self.V_capa >= 23500 and self.V_capa < 31500:
+				self.espesor_aislamiento_capa_alta = 0.000254 + 0.000127
+			elif self.V_capa >= 31500 and self.V_capa < 36000:
+				self.espesor_aislamiento_capa_alta = 2*0.000254
+			else:
+				print('ERROR!. Voltaje entre capas de alta fuera de rango')
+		elif self.kVBIL > 125 and self.kVBIL < 200:
+			if self.V_capa < 16300:
+				self.espesor_aislamiento_capa_alta = 0.000254
+			elif self.V_capa >= 16300 and self.V_capa < 21900:
+				self.espesor_aislamiento_capa_alta = 0.000254 + 0.000127
+			elif self.V_capa >= 21900 and self.V_capa < 25000:
+				self.espesor_aislamiento_capa_alta = 2*0.000254
+			else:
+				print('ERROR!. Voltaje entre capas de alta fuera de rango')
+		else:
+			print('ERROR!. kVBIL fuera de rango')
+		
+		return self.espesor_aislamiento_capa_alta
+
+	def calculo_w_bobina_alta(self):
+		self.w_bobina_alta = (self.Dc + self.espesor_aislamiento_capa_alta)*self.no_capas_alta + self.E_refuerzo
+		
+		return self.w_bobina_alta
+
+	def calculo_BAR(self):
+		if self.clase_aislamiento == 15.0:
+			self.BAR = 5e-3
+		elif self.clase_aislamiento == 25.0:
+			self.BAR = 7.5e-3
+		elif self.clase_aislamiento == 34.5:
+			self.BAR = 10e-3
+		else:
+			print('ERROR!.Clase de aislamiento no corresponde')
+		
+		return self.BAR
+
+	def calculo_w_total(self):
+		self.w_total = self.w_bobina_baja + self.BAR + self.w_bobina_alta + self.BAR
+		
+		return self.w_total
+
+	def calculo_w_bobina_total(self):
+		self.w_bobina_total = self.w_total + self.espesor_molde + 3*0.000254
+		
+		return self.w_bobina_total
+
+	def calculo_fdB(self):
+		if self.sistema == 'trifasico':
+			no_fases = 3
+		elif self.sistema == 'monofasico':
+			no_fases = 1
+		else:
+			pass
+
+		if self.kva/no_fases >= 5 and self.kva/no_fases <= 15:
+			self.fdB = 1.3
+		elif self.kva/no_fases == 25:
+			self.fdB = 1.4
+		elif self.kva/no_fases >= 37.5 and self.kva/no_fases <= 50:
+			self.fdB = 1.45
+		elif self.kva/no_fases >= 55 and self.kva/no_fases <= 500:
+			self.fdB = 1.50
+		else:
+			pass
+
+		return self.fdB
+
+	def calculo_YBT(self):
+		self.YBT = 2*self.w_bobina_total*self.fdB + self.D_dimension
+
+		return self.YBT
+
+	def calculo_sB(self):
+		self.sB = self.E_dimension + self.espesor_molde + self.w_bobina_baja/2
+
+		return self.sB
+
+	def calculo_rB(self):
+		self.rB = (self.espesor_molde + self.w_bobina_baja/2)*self.fdB
+
+		return self.rB
+
+	def calculo_vuelta_media_baja(self):
+		self.vuelta_media_baja = 2*self.L_molde + 2*pi*sqrt((self.rB**2 + self.sB**2)/2)
+
+		return self.vuelta_media_baja
+
+	def calculo_sA(self):
+		self.sA = self.E_dimension + self.espesor_molde + self.w_bobina_baja + self.BAR + self.w_bobina_alta/2
+
+		return self.sA
+
+	def calculo_rA(self):
+		self.rA = (self.espesor_molde + self.w_bobina_baja + self.BAR + self.w_bobina_alta/2)*self.fdB
+
+		return self.rA
+
+	def calculo_vuelta_media_alta(self):
+		self.vuelta_media_alta = 2*self.L_molde + 2*pi*sqrt((self.rA**2 + self.sA**2)/2)
+
+		return self.vuelta_media_alta
+
+	def calculo_vuelta_media(self):
+		self.vuelta_media = (self.vuelta_media_baja + self.vuelta_media_alta)/2
+
+		return self.vuelta_media
+
+	def calculo_R_baja(self):
+		self.R_baja = self.rho_Al*self.vuelta_media_baja*self.Ns/self.espesor_conductor_baja/self.ancho_conductor_baja
+
+		return self.R_baja
+
+	def calculo_R_alta(self):
+		self.R_alta = self.rho_Cu*self.vuelta_media_alta*self.Np/pi/((self.Dc/2)**2)
+
+		return self.R_alta
+
+	def calculo_R_T_trabajo(self, R, alpha):
+		self.R_T_trabajo = R*(1+alpha*(self.T_trabajo - self.T_base))
+
+		return self.R_T_trabajo
+
+	def calculo_perdidas_bobina(self, R, I):
+		self.perdidas_bobina = R*I**2
+
+		return self.perdidas_bobina
+
+	def calculo_volumen_bobina_baja(self):
+		self.volumen_bobina_baja = self.vuelta_media_baja*self.w_bobina_baja*self.ancho_conductor_baja
+
+		return self.volumen_bobina_baja
+
+	def calculo_volumen_bobina_alta(self):
+		self.volumen_bobina_alta = self.vuelta_media_alta*self.w_bobina_alta*self.h_bobina_alta
+
+		return self.volumen_bobina_alta
+
+	def calculo_volumen_nucleo(self):
+		self.volumen_nucleo = (2*self.E_dimension*(self.h_bobina_baja + self.w_bobina_total) + pi*self.E_dimension**2)*self.D_dimension
+
+		return self.volumen_nucleo
+
+	def calculo_volumen_nucleo_total(self):
+		self.volumen_nucleo_total = 2*self.volumen_nucleo
+
+		return self.volumen_nucleo_total
+
+	def calculo_peso_nucleo_total(self):
+		self.peso_nucleo_total = self.densidad_acero*self.volumen_nucleo
+
+		return self.peso_nucleo_total
+
+	def calculo_perdidas_nucleo(self):
+		self.perdidas_nucleo = self.peso_nucleo_total*self.maximas_perdidas_nucleo
+
+		return self.perdidas_nucleo
+
+	def calculo_eficiencia(self):
+		num = self.factor_carga*self.Vs_fase*self.Is_fase*self.fp
+		den = num  + self.perdidas_nucleo + self.factor_carga**2*(self.perdidas_bobina_baja + self.perdidas_bobina_baja)
+		self.eficiencia = num/den
+
+		return self.eficiencia
+
+	def calculo_porcentaje_corriente_excitacion(self):
+		self.porcentaje_corriente_excitacion = self.perdidas_nucleo/10/self.kva
+
+		return self.porcentaje_corriente_excitacion
+
+	def calculo_Xd(self, N):
+		factor1 = 1/self.h_bobina_baja*2*pi*self.f*N**2*self.permeabilidad_vacio
+		factor2 = 1/3*self.vuelta_media_baja + self.vuelta_media*self.BAR + 1/3*self.vuelta_media_alta*self.w_bobina_alta
+
+		self.Xd = factor1*factor2
+		
+		return self.Xd
+
+	def calculo_porcentaje_Xd(self, Xd, I):
+		self.porcentaje_Xd = I**2*Xd/10/self.kva
+		
+		return self.porcentaje_Xd
+
+	def calculo_porcentaje_R_BT(self):
+		self.porcentaje_R_BT = (self.perdidas_bobina_baja + self.perdidas_bobina_alta)/10/self.kva
+		
+		return self.porcentaje_R_BT
+
+	def calculo_porcentaje_Z(self):
+		self.porcentaje_Z = sqrt(self.porcentaje_R_BT**2 + self.porcentaje_Xd**2)
+		
+		return self.porcentaje_Z
+
+	def calcular_simple(self):
+		aux_voltajes = self.calculo_voltajes()
+		aux_corrientes = self.calculo_corrientes()
+
 		self.datos_salida_dict = {
-		'Vp_linea': self.calculo_voltajes()[0], 
-		'Vp_fase': self.calculo_voltajes()[1], 
-		'Vs_linea': self.calculo_voltajes()[2],
-		'Vs_fase': self.calculo_voltajes()[3],
-		'Ip_linea': self.calculo_corrientes()[0],
-		'Ip_fase': self.calculo_corrientes()[1],
-		'Is_linea': self.calculo_corrientes()[2],
-		'Is_fase': self.calculo_corrientes()[3],
+		'Vp_linea': aux_voltajes[0], 
+		'Vp_fase': aux_voltajes[1], 
+		'Vs_linea': aux_voltajes[2],
+		'Vs_fase': aux_voltajes[3],
+		'Ip_linea': aux_corrientes[0],
+		'Ip_fase': aux_corrientes[1],
+		'Is_linea': aux_corrientes[2],
+		'Is_fase': aux_corrientes[3],
 		'V_por_vuelta': self.calculo_V_por_vuelta(),
 		'Ac': self.calculo_Ac(),
 		'Acf': self.calculo_Acf(),
@@ -230,7 +439,61 @@ class Calculos():
 		'no_capas_alta': (self).calculo_no_capas_alta(),
 		'V_capa': self.calculo_V_capa(),
 		'E_refuerzo': self.calculo_E_refuerzo(),
+		'espesor_aislamiento_capa_alta': self.calculo_espesor_aislamiento_capa_alta(),
+		'BAR':	self.calculo_BAR(),
+		'w_bobina_alta': self.calculo_w_bobina_alta(),
+		'w_total': self.calculo_w_total(),
+		'w_bobina_total': self.calculo_w_bobina_total(),
+		'fdB': self.calculo_fdB(),
+		'YBT': self.calculo_YBT(),
+		'sB': self.calculo_sB(),
+		'rB': self.calculo_rB(),
+		'vuelta_media_baja': self.calculo_vuelta_media_baja(),
+		'sA': self.calculo_sA(),
+		'rA': self.calculo_rA(),
+		'vuelta_media_alta': self.calculo_vuelta_media_alta(),
+		'vuelta_media': self.calculo_vuelta_media(),
+		'R_baja': self.calculo_R_baja(),
+		'R_alta': self.calculo_R_alta()
 		}
+
+		self.R_baja_T_trabajo = self.calculo_R_T_trabajo(self.R_baja, self.rho_Al)
+		self.R_alta_T_trabajo = self.calculo_R_T_trabajo(self.R_alta, self.rho_Cu)
+
+		self.datos_salida_dict.update({
+		'R_baja_T_trabajo': self.R_baja_T_trabajo,
+		'R_alta_T_trabajo': self.R_alta_T_trabajo,
+		})
+
+		self.perdidas_bobina_baja = self.calculo_perdidas_bobina(self.R_baja_T_trabajo, self.Is_fase)
+		self.perdidas_bobina_alta = self.calculo_perdidas_bobina(self.R_alta_T_trabajo, self.Ip_fase)
+
+		self.datos_salida_dict.update({
+		'perdidas_bobina_baja': self.perdidas_bobina_baja,
+		'perdidas_bobina_alta': self.perdidas_bobina_alta,
+		'volumen_bobina_baja': self.calculo_volumen_bobina_baja(),
+		'volumen_bobina_alta': self.calculo_volumen_bobina_alta(),
+		'volumen_nucleo': self.calculo_volumen_nucleo(),
+		'volumen_nucleo_total': self.calculo_volumen_nucleo_total(),
+		'peso_nucleo_total': self.calculo_peso_nucleo_total(),
+		'perdidas_nucleo': self.calculo_perdidas_nucleo(),
+		'eficiencia': self.calculo_eficiencia(),
+		'porcentaje_corriente_excitacion': self.calculo_porcentaje_corriente_excitacion()
+		})
+
+		self.Xd_baja = self.calculo_Xd(self.Ns)
+		self.Xd_alta = self.calculo_Xd(self.Np)
+		self.porcentaje_Xd_baja = self.calculo_porcentaje_Xd(self.Xd_baja, self.Is_fase)
+		self.porcentaje_Xd_alta = self.calculo_porcentaje_Xd(self.Xd_alta, self.Ip_fase)
+
+		self.datos_salida_dict.update({
+		'Xd_baja': self.Xd_baja,
+		'Xd_alta': self.Xd_alta,
+		'porcentaje_Xd_baja': self.porcentaje_Xd_baja,
+		'porcentaje_Xd_alta': self.porcentaje_Xd_alta,
+		'porcentaje_R_BT': self.calculo_porcentaje_R_BT(),
+		'porcentaje_Z': self.calculo_porcentaje_Z(),
+		})
 
 		return self.datos_salida_dict
 
@@ -239,4 +502,4 @@ if __name__ == '__main__':
 
 	trafo = Calculos(datos,0)
 
-	print(trafo.calcular())
+	print(trafo.calcular_simple())

@@ -1,3 +1,5 @@
+from math import *
+
 datos_entrada_dict = {
 'kva': 45, #kVA
 'sistema': 'trifasico', #trifasico/monofasico
@@ -11,6 +13,9 @@ datos_entrada_dict = {
 'espesor_conductor_baja': 0.00045, #m
 'Dc': 1.009687e-3, #m
 'kVBIL': 95, #kV
+'clase_aislamiento': 15.0, #kV
+'factor_carga': 1.0,
+'fp': 0.9
 }
 
 datos_opcionales_dict = {}
@@ -22,8 +27,17 @@ datos_por_defecto_dict = {
 'D_dimension': 0.1905, #m
 'J_primario_cobre': 2.6, #A/mm^2
 'J_secundario_aluminio': 1.8, #A/mm^2
-'espesor_molde': 0.0035, #m
+'espesor_molde': 0.0032, #m
 'margen_baja': 0.01, #m
+'rho_Al': 2.82e-8, #ohm*m @ 20 °C
+'rho_Cu': 1.70e-8, #ohm*m @ 20 °C
+'alpha_Al': 3.93e-3,
+'alpha_Cu': 3.90e-3,
+'T_base': 20, #°C
+'T_trabajo': 75, #°C
+'densidad_acero': 7650, #kg/m^3
+'maximas_perdidas_nucleo': 1.551, #W/kg
+'permeabilidad_vacio': pi*4e-7, #N/A^2
 }
 
 datos_salida_dict = {
