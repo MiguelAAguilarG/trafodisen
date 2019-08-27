@@ -18,7 +18,35 @@ datos_opcionales_dict = {
 'consideracion_DE': [1.5, 6.5], # <= D_dimension/E_dimension <=
 'consideracion_B': [0.5, 1.8], # <= B <= 
 'consideracion_perdidas_nucleo': 'lista', # 'valor': 'maximas_perdidas_nucleo', 'lista': 'perdidas_nucleo_dict'
+'porcentaje_Z_garantia': [3, 10],
+'eficiencia_garantia': [0.95, 1.0],
+'paso_DE': 0.1,
+'paso_B': 0.1,
 }
+
+#Caso base
+'''datos_opcionales_dict = {
+'consideracion_hw': [2.0, 5.0], # <= h_molde/w_molde <=
+'consideracion_DE': [1.5, 6.5], # <= D_dimension/E_dimension <=
+'consideracion_B': [0.5, 1.8], # <= B <= 
+'consideracion_perdidas_nucleo': 'lista', # 'valor': 'maximas_perdidas_nucleo', 'lista': 'perdidas_nucleo_dict'
+'porcentaje_Z_garantia': [3, 10],
+'eficiencia_garantia': [0.95, 1.0],
+'paso_DE': 0.1,
+'paso_B': 0.1,
+}'''
+
+#para no hacerlo iterativo
+'''datos_opcionales_dict = {
+'consideracion_hw': [], # <= h_molde/w_molde <=
+'consideracion_DE': [], # <= D_dimension/E_dimension <=
+'consideracion_B': [], # <= B <= 
+'consideracion_perdidas_nucleo': 'lista', # 'valor': 'maximas_perdidas_nucleo', 'lista': 'perdidas_nucleo_dict'
+'porcentaje_Z_garantia': [],
+'eficiencia_garantia': [],
+'paso_DE': 0.1,
+'paso_B': 0.1,
+}'''
 
 datos_por_defecto_dict = {
 'ancho_lamina_aluminio_list': [114.3e-3, 139.7e-3, 152.4e-3, 158.7e-3, 203.2e-3, 254e-3, 254e-3], #m

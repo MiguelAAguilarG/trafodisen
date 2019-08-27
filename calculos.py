@@ -42,23 +42,31 @@ class Calculos():
 		return self.Ip_linea, self.Ip_fase, self.Is_linea, self.Is_fase
 
 	def calculo_V_por_vuelta(self):
+		if self.consideracion_DE:
+			self.V_por_vuelta = self.Vp_fase/self.Np
+		else:
+			if self.sistema == 'monofasico':
+				self.constante_V_por_vuelta = self.constante_V_por_vuelta_mono
+			elif self.sistema == 'trifasico':
+				self.constante_V_por_vuelta = self.constante_V_por_vuelta_tri
 
-		if self.sistema == 'monofasico':
-			self.constante_V_por_vuelta = self.constante_V_por_vuelta_mono
-		if self.sistema == 'trifasico':
-			self.constante_V_por_vuelta = self.constante_V_por_vuelta_tri
-
-		self.V_por_vuelta = self.constante_V_por_vuelta*sqrt(self.f*self.kva)
+			self.V_por_vuelta = self.constante_V_por_vuelta*sqrt(self.f*self.kva)
 
 		return self.V_por_vuelta
 
 	def calculo_Ac(self):
-		self.Ac = self.V_por_vuelta/(4.44*self.f*self.B)
+		if self.consideracion_DE:
+			self.Ac = self.Acf*self.ka
+		else:
+			self.Ac = self.V_por_vuelta/(4.44*self.f*self.B)
 
 		return self.Ac
 
 	def calculo_Acf(self):
-		self.Acf = self.Ac/self.ka
+		if self.consideracion_DE:
+			self.Acf = self.D_dimension*(2*self.E_dimension)
+		else:
+			self.Acf = self.Ac/self.ka
 
 		return self.Acf
 
@@ -77,7 +85,10 @@ class Calculos():
 		return self.D_dimension
 
 	def calculo_E_dimension(self):
-		self.E_dimension = self.Acf/(2*self.D_dimension)
+		if self.consideracion_DE:
+			self.E_dimension = self.D_dimension/self.DE
+		else:
+			self.E_dimension = self.Acf/(2*self.D_dimension)
 
 		return self.E_dimension
 
@@ -96,14 +107,24 @@ class Calculos():
 		return self.no_laminas
 
 	def calculo_Np(self):
-		self.Np = round(self.Vp_fase/self.V_por_vuelta)
+		if self.consideracion_DE:
+			self.Np = round(self.Vp_fase/(4.44*self.f*self.B*self.Ac))
+		else:
+			self.Np = round(self.Vp_fase/self.V_por_vuelta)
 
-		return self.Np
+		self.Np_sin_ajustar = self.Np
+		
+		return self.Np, self.Np_sin_ajustar
 
 	def calculo_Ns(self):
-		self.Ns = round(self.Vs_fase/self.V_por_vuelta)
+		if self.consideracion_DE:
+			self.Ns = round(self.Vs_fase/(4.44*self.f*self.B*self.Ac))
+		else:
+			self.Ns = round(self.Vs_fase/self.V_por_vuelta)
 
-		return self.Ns
+		self.Ns_sin_ajustar = self.Ns
+
+		return self.Ns, self.Ns_sin_ajustar
 
 	def calculo_N_ajuste(self):
 		TTR_V = self.Vp_fase/self.Vs_fase
@@ -251,6 +272,8 @@ class Calculos():
 		return self.E_refuerzo
 
 	def calculo_espesor_aislamiento_capa_alta(self):
+		self.error_espesor_aislamiento_capa_alta = False
+
 		if self.kVBIL <= 125:
 			if self.V_capa < 23500:
 				self.espesor_aislamiento_capa_alta = 0.000254
@@ -260,6 +283,7 @@ class Calculos():
 				self.espesor_aislamiento_capa_alta = 2*0.000254
 			else:
 				print('ERROR!. Voltaje entre capas de alta fuera de rango')
+				self.error_espesor_aislamiento_capa_alta = True
 		elif self.kVBIL > 125 and self.kVBIL < 200:
 			if self.V_capa < 16300:
 				self.espesor_aislamiento_capa_alta = 0.000254
@@ -269,10 +293,12 @@ class Calculos():
 				self.espesor_aislamiento_capa_alta = 2*0.000254
 			else:
 				print('ERROR!. Voltaje entre capas de alta fuera de rango')
+				self.error_espesor_aislamiento_capa_alta = True
 		else:
 			print('ERROR!. kVBIL fuera de rango')
+			self.error_espesor_aislamiento_capa_alta = True
 		
-		return self.espesor_aislamiento_capa_alta
+		return self.espesor_aislamiento_capa_alta, self.error_espesor_aislamiento_capa_alta
 
 	def calculo_w_bobina_alta(self):
 		self.w_bobina_alta = (self.Dc + self.espesor_aislamiento_capa_alta)*self.no_capas_alta + self.E_refuerzo
