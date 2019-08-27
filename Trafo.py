@@ -33,12 +33,16 @@ class Trafo(Calculos):
 		self.fdB_list = self.datos_por_defecto['fdB_list']
 		self.Vm_list = self.datos_por_defecto['Vm_list']
 		self.Vw_ImpulsoRayo_list = self.datos_por_defecto['Vw_ImpulsoRayo_list']
+		self.pasos_perdidas_nucleo = self.datos_por_defecto['pasos_perdidas_nucleo']
+		self.perdidas_nucleo_dict =  self.datos_por_defecto['perdidas_nucleo_dict']
 
 		#datos_opcionales
 		self.datos_opcionales = datos_opcionales
 		if isinstance(self.datos_opcionales, dict) and self.datos_opcionales:
-			self.consideracion_1 = self.datos_opcionales['consideracion_1']
-			self.consideracion_2 = self.datos_opcionales['consideracion_2']
+			self.consideracion_hw = self.datos_opcionales['consideracion_hw']
+			self.consideracion_DE = self.datos_opcionales['consideracion_DE']
+			self.consideracion_B = self.datos_opcionales['consideracion_B']
+			self.consideracion_perdidas_nucleo = self.datos_opcionales['consideracion_perdidas_nucleo']
 
 		#datos
 		self.datos = datos
@@ -73,7 +77,8 @@ class Trafo(Calculos):
 		'Acf': self.calculo_Acf(),
 		'D_dimension': self.calculo_D_dimension(),
 		'E_dimension': self.calculo_E_dimension(),
-		'grosor_lamina': self.calculo_grosor_lamina(),
+		'tipo_lamina': self.calculo_grosor_lamina()[0],
+		'grosor_lamina': self.grosor_lamina,
 		'no_laminas': self.calculo_no_laminas(),
 		'Np_sin_ajustar': self.calculo_Np(),
 		'Ns_sin_ajustar': self.calculo_Ns(),
@@ -136,7 +141,8 @@ class Trafo(Calculos):
 		'volumen_nucleo': self.calculo_volumen_nucleo(),
 		'volumen_nucleo_total': self.calculo_volumen_nucleo_total(),
 		'peso_nucleo_total': self.calculo_peso_nucleo_total(),
-		'perdidas_nucleo': self.calculo_perdidas_nucleo(),
+		'perdidas_nucleo': self.calculo_perdidas_nucleo()[0],
+		'perdidas_nucleo_W_libras': self.perdidas_nucleo_W_libras,
 		'eficiencia': self.calculo_eficiencia(),
 		'porcentaje_corriente_excitacion': self.calculo_porcentaje_corriente_excitacion()
 		})

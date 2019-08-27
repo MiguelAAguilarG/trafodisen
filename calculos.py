@@ -67,14 +67,12 @@ class Calculos():
 			for sistema, kva_list in sistema_kva_dict.items():
 				if self.sistema == sistema:
 					tam = len(kva_list)
-					if tam == 3:
-						if (self.kva >= kva_list[0] and self.kva <= kva_list[1]) or self.kva == kva_list[2]:
+					for indice_rango in [2*x for x in range(int(len(kva_list[0])/2))]:
+						if (self.kva >= kva_list[0][indice_rango] and self.kva <= kva_list[0][indice_rango+1]):
 							self.D_dimension = D_dimension
-					elif tam == 2:
-						if (self.kva >= kva_list[0] and self.kva <= kva_list[1]):
+					if tam == 2:
+						if self.kva in kva_list[1]:
 							self.D_dimension = D_dimension
-					else:
-						print('ERROR!. kva fuera de rango en un sistema monofásico')
 
 		return self.D_dimension
 
@@ -88,8 +86,9 @@ class Calculos():
 			for tipo_lamina, grosor_lamina in self.laminas_acero_dict.items():
 				if self.grosor_lamina == tipo_lamina:
 					self.grosor_lamina = grosor_lamina
+					self.tipo_lamina = tipo_lamina
 
-		return self.grosor_lamina
+		return self.tipo_lamina, self.grosor_lamina
 
 	def calculo_no_laminas(self):
 		self.no_laminas = ceil(self.E_dimension/self.grosor_lamina)
@@ -409,9 +408,24 @@ class Calculos():
 		return self.peso_nucleo_total
 
 	def calculo_perdidas_nucleo(self):
-		self.perdidas_nucleo = self.peso_nucleo_total*self.maximas_perdidas_nucleo
+		if self.consideracion_perdidas_nucleo == 'valor':
+			self.perdidas_nucleo = self.peso_nucleo_total*self.maximas_perdidas_nucleo
+		elif self.consideracion_perdidas_nucleo == 'lista':
+			Wlb_lista = self.perdidas_nucleo_dict[self.tipo_lamina][self.f]
+			Teslas_lista = self.pasos_perdidas_nucleo
 
-		return self.perdidas_nucleo
+			for indice_Teslas, Teslas in enumerate(Teslas_lista):
+				if Teslas >= self.B:
+					y1 = Wlb_lista[indice_Teslas-1]
+					y2 = Wlb_lista[indice_Teslas]
+					x1 = Teslas_lista[indice_Teslas-1]
+					x2 = Teslas_lista[indice_Teslas]
+					break
+
+			self.perdidas_nucleo_W_libras = (y2-y1)/(x2-x1)*(self.B-x1) + y1
+			self.perdidas_nucleo = self.perdidas_nucleo_W_libras*self.peso_nucleo_total/0.4535
+
+		return self.perdidas_nucleo, self.perdidas_nucleo_W_libras
 
 	def calculo_eficiencia(self):
 		num = self.factor_carga*self.Vs_fase*self.Is_fase*self.fp
