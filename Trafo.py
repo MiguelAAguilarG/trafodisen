@@ -1,5 +1,6 @@
+from math import sqrt, pi, ceil, floor
 from calculos import Calculos
-from calculos import datos
+import datos
 
 class Trafo(Calculos):
 	"""docstring for ClassName"""
@@ -278,9 +279,6 @@ class Trafo(Calculos):
 		return self.datos_salida_dict
 
 if __name__ == '__main__':
-	from math import sqrt
-	import datos
-
 	datos = datos.datos_entrada_dict
 
 	trafo = Trafo(datos)
