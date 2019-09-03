@@ -1,9 +1,9 @@
-from calculos import *
+from calculos import Calculos
+from calculos import datos
 
 class Trafo(Calculos):
 	"""docstring for ClassName"""
-	def __init__(self, datos, datos_opcionales = datos.datos_opcionales_dict, 
-				 datos_por_defecto = datos.datos_por_defecto_dict, datos_salida_dict = datos.datos_salida_dict):
+	def __init__(self, datos, datos_opcionales = datos.datos_opcionales_dict, datos_por_defecto = datos.datos_por_defecto_dict, datos_salida_dict = datos.datos_salida_dict):
 
 		#datos_por_defecto
 		self.datos_por_defecto = datos_por_defecto
@@ -278,7 +278,7 @@ class Trafo(Calculos):
 		return self.datos_salida_dict
 
 if __name__ == '__main__':
-	from math import *
+	from math import sqrt
 	import datos
 
 	datos = datos.datos_entrada_dict

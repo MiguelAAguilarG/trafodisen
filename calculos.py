@@ -1,4 +1,4 @@
-from math import *
+from math import sqrt, pi, ceil, floor
 import datos
 
 class Calculos():

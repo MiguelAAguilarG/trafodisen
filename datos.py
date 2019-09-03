@@ -1,4 +1,4 @@
-from math import *
+from math import sqrt, pi
 
 datos_entrada_dict = {
 'kva': 45, #kVA
